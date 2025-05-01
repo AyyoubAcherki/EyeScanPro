@@ -6,14 +6,22 @@ import os
 import gdown
 import logging
 
-# ⚠️ Doit être en premier
+# ⚠️ Configuration à mettre en tout premier
 st.set_page_config(page_title="EyeScan Pro", page_icon="👁️", layout="wide")
+
+# === AFFICHAGE FIXE : logo + titre ===
+def afficher_entete():
+    col1, col2 = st.columns([1, 5])
+    with col1:
+        st.image("11.png", width=80)  # Ton logo ici
+    with col2:
+        st.markdown("<h1 style='color:#2C3E50;'>EyeScan Pro</h1>", unsafe_allow_html=True)
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# === 1. Gestion du chargement du modèle ===
+# === 1. Chargement du modèle ===
 def charger_modele():
     model_path = "models/meilleur_model_vgg16_adam.h5"
     os.makedirs("models", exist_ok=True)
@@ -36,7 +44,6 @@ def charger_modele():
         st.sidebar.error(f"❌ Erreur de chargement : {str(e)}")
         st.stop()
 
-# Charger le modèle dès le début
 modele = charger_modele()
 
 # === 2. Dictionnaire des classes ===
@@ -48,7 +55,7 @@ CLASSES = {
     4: {'name': 'Myopia', 'color': 'blue'}
 }
 
-# === 3. Prétraitement de l'image ===
+# === 3. Prétraitement image ===
 def preparer_image(img):
     try:
         if img.mode != 'RGB':
@@ -65,17 +72,17 @@ def preparer_image(img):
         st.error(f"Erreur de prétraitement : {str(e)}")
         return None
 
-# === 4. Page d'analyse ===
+# === 4. Page d’analyse ===
 def page_predire_image():
+    afficher_entete()
     if not all(k in st.session_state for k in ['nom', 'prenom']):
         st.warning("ℹ️ Veuillez compléter le formulaire d'inscription d'abord")
         return
 
-    st.title("🔍 Analyse d'Image Oculaire")
-    st.markdown(f"Patient: **{st.session_state['prenom']} {st.session_state['nom']}**")
-    
+    st.subheader("Analyse d'une image rétinienne")
+
     with st.expander("📸 Upload d'image", expanded=True):
-        fichier = st.file_uploader("", type=["jpg", "jpeg", "png"], help="Image rétinienne claire de 224x224px minimum")
+        fichier = st.file_uploader("Choisissez une image (JPG/PNG)", type=["jpg", "jpeg", "png"])
     
     if fichier:
         try:
@@ -101,9 +108,10 @@ def page_predire_image():
         except Exception as e:
             st.error(f"Erreur d'analyse: {str(e)}")
 
-# === 5. Formulaire d'inscription ===
+# === 5. Page d’inscription ===
 def page_inscription():
-    st.title("📝 Enregistrement Patient")
+    afficher_entete()
+    st.subheader("Formulaire d'inscription du patient")
     with st.form("inscription"):
         cols = st.columns(2)
         prenom = cols[0].text_input("Prénom*", key="prenom_input")
@@ -133,12 +141,12 @@ def main():
         "📝 Inscription": page_inscription,
         "🔍 Analyse": page_predire_image
     }
-    
+
     if "prenom" not in st.session_state:
-        st.sidebar.warning("Complétez l'inscription d'abord")
+        st.sidebar.warning("Complétez d'abord l'inscription")
         page = "📝 Inscription"
     else:
-        page = st.sidebar.radio("", list(pages.keys()))
+        page = st.sidebar.radio("Pages", list(pages.keys()))
     
     pages[page]()
 
