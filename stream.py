@@ -13,13 +13,9 @@ st.set_page_config(page_title="EyeScan Pro", page_icon="👁️", layout="wide")
 def afficher_entete():
     col1, col2 = st.columns([1, 5])
     with col1:
-        st.image("11.jpeg", width=80)  # Ton logo ici
+        st.image("11.jpeg", width=150)  # Ton logo ici
     with col2:
         st.markdown("<h1 style='color:#2C3E50;'>EyeScan Pro</h1>", unsafe_allow_html=True)
-
-# Configuration du logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # === 1. Chargement du modèle ===
 def charger_modele():
