@@ -13,7 +13,7 @@ st.set_page_config(page_title="EyeScan Pro", page_icon="👁️", layout="wide")
 def afficher_entete():
     col1, col2 = st.columns([1, 5])  # Ajuste la proportion des colonnes
     with col1:
-        st.image("22.jpeg", width=150, use_container_width=True)  # Mise à jour ici
+        st.image("22.jpeg", width=150)  # Mise à jour ici
     with col2:
         st.markdown("<h1 style='color:#2C3E50;'>EyeScan Pro</h1>", unsafe_allow_html=True)
 
