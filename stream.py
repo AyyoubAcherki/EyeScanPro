@@ -96,8 +96,7 @@ def page_predire_image():
                         classe = CLASSES[classe_idx]
                         st.markdown(
                             f"<h2 style='color:{classe['color']};'>"
-                            f"Résultat: 
-                            {classe['name']} ({confidence:.1f}%)</h2>",
+                            f"Résultat: \n{classe['name']} ({confidence:.1f}%)</h2>",
                             unsafe_allow_html=True
                         )
                         probas = {CLASSES[i]['name']: float(prediction[0][i]) for i in CLASSES}
