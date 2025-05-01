@@ -3,7 +3,7 @@ from PIL import Image
 import numpy as np
 from tensorflow.keras.models import load_model
 import os
-import gdown
+import requests
 import logging
 
 # Configuration du logging
@@ -20,8 +20,12 @@ def charger_modele():
         try:
             st.sidebar.warning("⚠️ Téléchargement du modèle...")
             url = "https://drive.google.com/uc?id=1MYgwEtP5tkGe-wLPqRFSS7cDBmKz5Vwi"
-            gdown.download(url, model_path, quiet=False)
-            st.sidebar.success("✅ Modèle téléchargé !")
+            response = requests.get(url, stream=True)
+            with open(model_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=1024):
+                    if chunk:
+                        f.write(chunk)
+            st.sidebar.success("✅ Modèle téléchargé avec succès !")
         except Exception as e:
             st.sidebar.error(f"❌ Échec du téléchargement : {str(e)}")
             st.stop()
@@ -75,7 +79,7 @@ def preparer_image(img):
 def page_predire_image():
     """Interface de prédiction avec gestion d'erreurs complète"""
     if not all(k in st.session_state for k in ['nom', 'prenom']):
-        st.warning("⚠️ Veuillez compléter le formulaire d'inscription pour analyser une image.")
+        st.warning("ℹ️ Veuillez compléter le formulaire d'inscription d'abord")
         return
 
     st.title("🔍 Analyse d'Image Oculaire")
@@ -145,35 +149,23 @@ def page_inscription():
                 st.success("Profil enregistré avec succès !")
                 st.balloons()
 
-# 6. Affichage du logo et du titre de l'app
-def afficher_entete():
-    st.markdown(
-        "<h1 style='text-align: center; color: #2c3e50;'>👁️ EyeScan Pro</h1>",
-        unsafe_allow_html=True
-    )
-    st.image("11.jpeg", width=80)  # Vérifie bien le nom et l'extension ici
-
-# 7. Navigation améliorée
+# 6. Navigation améliorée
 def main():
     st.sidebar.header("Navigation")
+    pages = {
+        "📝 Inscription": page_inscription,
+        "🔍 Analyse": page_predire_image
+    }
     
-    # Vérification si le formulaire est complété
-    if "prenom" not in st.session_state or "nom" not in st.session_state:
-        st.sidebar.warning("🛑 Vous devez d'abord remplir le formulaire.")
-        page = "📝 Inscription"  # Force l'affichage du formulaire
+    # Vérification session pour l'accès à l'analyse
+    if "prenom" not in st.session_state:
+        st.sidebar.warning("Complétez l'inscription d'abord")
+        page = "📝 Inscription"
     else:
-        page = st.sidebar.radio("Pages", ["📝 Inscription", "🔍 Analyse"])
-
-    if page == "🔍 Analyse" and not all(k in st.session_state for k in ['prenom', 'nom']):
-        st.warning("⚠️ Accès refusé. Complétez l'inscription d'abord.")
-        return
+        page = st.sidebar.radio("", list(pages.keys()))
     
-    if page == "📝 Inscription":
-        page_inscription()
-    elif page == "🔍 Analyse":
-        page_predire_image()
+    pages[page]()
 
 if __name__ == "__main__":
     st.set_page_config(page_title="EyeScan Pro", page_icon="👁️", layout="wide")
-    afficher_entete()  # Afficher le logo et le titre
     main()
