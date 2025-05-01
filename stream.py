@@ -3,8 +3,9 @@ from PIL import Image
 import numpy as np
 from tensorflow.keras.models import load_model
 import os
-import requests
+import gdown
 import logging
+import io
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)
@@ -20,12 +21,8 @@ def charger_modele():
         try:
             st.sidebar.warning("⚠️ Téléchargement du modèle...")
             url = "https://drive.google.com/uc?id=1MYgwEtP5tkGe-wLPqRFSS7cDBmKz5Vwi"
-            response = requests.get(url, stream=True)
-            with open(model_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=1024):
-                    if chunk:
-                        f.write(chunk)
-            st.sidebar.success("✅ Modèle téléchargé avec succès !")
+            gdown.download(url, model_path, quiet=False)
+            st.sidebar.success("✅ Modèle téléchargé !")
         except Exception as e:
             st.sidebar.error(f"❌ Échec du téléchargement : {str(e)}")
             st.stop()
@@ -53,6 +50,12 @@ CLASSES = {
 def preparer_image(img):
     """Prétraitement robuste de l'image avec vérifications"""
     try:
+        # Vérification si l'image est en bytes (format uploadé)
+        if isinstance(img, bytes):
+            img = Image.open(io.BytesIO(img))
+        else:
+            img = Image.open(img)
+        
         # Conversion et redimensionnement
         if img.mode != 'RGB':
             img = img.convert('RGB')
@@ -72,7 +75,7 @@ def preparer_image(img):
         return np.expand_dims(img_array, axis=0)
         
     except Exception as e:
-        st.error(f"Erreur de prétraitement : {str(e)}")
+        st.error(f"Erreur de prétraitement de l'image : {str(e)}")
         return None
 
 # 4. Page de prédiction améliorée
@@ -149,8 +152,19 @@ def page_inscription():
                 st.success("Profil enregistré avec succès !")
                 st.balloons()
 
-# 6. Navigation améliorée
+# 6. Fonction d'affichage de l'en-tête (Logo et titre)
+def afficher_entete():
+    """Affiche le logo et le titre sur chaque page"""
+    try:
+        st.image("logo.png", width=80)  # Assurez-vous que le logo est bien placé dans le répertoire
+        st.markdown("<h1 style='text-align:center;'>EyeScan Pro</h1>", unsafe_allow_html=True)
+    except Exception as e:
+        st.error(f"Erreur d'affichage du logo : {str(e)}")
+
+# 7. Navigation améliorée
 def main():
+    afficher_entete()
+    
     st.sidebar.header("Navigation")
     pages = {
         "📝 Inscription": page_inscription,
