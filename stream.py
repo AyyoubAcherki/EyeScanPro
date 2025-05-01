@@ -11,9 +11,9 @@ st.set_page_config(page_title="EyeScan Pro", page_icon="👁️", layout="wide")
 
 # === AFFICHAGE FIXE : logo + titre ===
 def afficher_entete():
-    col1, col2 = st.columns([1, 5])
+    col1, col2 = st.columns([1, 5])  # Ajuste la proportion des colonnes
     with col1:
-        st.image("22.jpeg", width=150)  # Ton logo ici
+        st.image("22.jpeg", width=150, use_column_width=False)  # Ajustez la largeur ici si besoin
     with col2:
         st.markdown("<h1 style='color:#2C3E50;'>EyeScan Pro</h1>", unsafe_allow_html=True)
 
