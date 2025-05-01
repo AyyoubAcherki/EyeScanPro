@@ -6,20 +6,14 @@ import os
 import gdown
 import logging
 
-# ⚠️ Configuration à mettre en tout premier
-st.set_page_config(page_title="EyeScan Pro", page_icon="👁️", layout="wide")
+# Configuration du logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# === AFFICHAGE FIXE : logo + titre ===
-def afficher_entete():
-    col1, col2 = st.columns([1, 5])
-    with col1:
-        st.image("11.jpeg", width=150)  # Ton logo ici
-    with col2:
-        st.markdown("<h1 style='color:#2C3E50;'>EyeScan Pro</h1>", unsafe_allow_html=True)
-
-# === 1. Chargement du modèle ===
+# 1. Gestion robuste du chargement du modèle
 def charger_modele():
-    model_path = "models/meilleur_model_vgg16_adam.h5"
+    """Charge le modèle avec vérification et téléchargement automatique si absent"""
+    model_path = "models/milleur_model_vgg16_adam.h5"
     os.makedirs("models", exist_ok=True)
     
     if not os.path.exists(model_path):
@@ -42,7 +36,7 @@ def charger_modele():
 
 modele = charger_modele()
 
-# === 2. Dictionnaire des classes ===
+# 2. Configuration des classes
 CLASSES = {
     0: {'name': 'Diabetic Retinopathy', 'color': 'red'},
     1: {'name': 'Glaucoma', 'color': 'orange'},
@@ -51,41 +45,54 @@ CLASSES = {
     4: {'name': 'Myopia', 'color': 'blue'}
 }
 
-# === 3. Prétraitement image ===
+# 3. Préparation de l'image améliorée
 def preparer_image(img):
+    """Prétraitement robuste de l'image avec vérifications"""
     try:
+        # Conversion et redimensionnement
         if img.mode != 'RGB':
             img = img.convert('RGB')
+        
+        # Vérification de la taille minimale
         if img.size[0] < 50 or img.size[1] < 50:
             st.warning("⚠️ Image trop petite - qualité de prédiction réduite")
+            
         img = img.resize((224, 224))
         img_array = np.array(img) / 255.0
+        
+        # Vérification des valeurs normalisées
         if np.max(img_array) > 1.0 or np.min(img_array) < 0.0:
             st.error("Erreur de normalisation des pixels")
             return None
+            
         return np.expand_dims(img_array, axis=0)
+        
     except Exception as e:
         st.error(f"Erreur de prétraitement : {str(e)}")
         return None
 
-# === 4. Page d’analyse ===
+# 4. Page de prédiction améliorée
 def page_predire_image():
-    afficher_entete()
+    """Interface de prédiction avec gestion d'erreurs complète"""
     if not all(k in st.session_state for k in ['nom', 'prenom']):
-        st.warning("ℹ️ Veuillez compléter le formulaire d'inscription d'abord")
+        st.warning("⚠️ Veuillez compléter le formulaire d'inscription pour analyser une image.")
         return
 
-    st.subheader("Analyse d'une image rétinienne")
-
+    st.title("🔍 Analyse d'Image Oculaire")
+    st.markdown(f"Patient: **{st.session_state['prenom']} {st.session_state['nom']}**")
+    
     with st.expander("📸 Upload d'image", expanded=True):
-        fichier = st.file_uploader("Choisissez une image (JPG/PNG)", type=["jpg", "jpeg", "png"])
+        fichier = st.file_uploader("", type=["jpg", "jpeg", "png"], 
+                                 help="Image rétinienne claire de 224x224px minimum")
     
     if fichier:
         try:
             img = Image.open(fichier)
             col1, col2 = st.columns(2)
+            
             with col1:
                 st.image(img, caption="Image originale", use_column_width=True)
+                
             with col2:
                 with st.spinner("Analyse en cours..."):
                     img_prep = preparer_image(img)
@@ -93,33 +100,41 @@ def page_predire_image():
                         prediction = modele.predict(img_prep)
                         classe_idx = np.argmax(prediction)
                         confidence = np.max(prediction) * 100
+                        
+                        # Affichage des résultats
                         classe = CLASSES[classe_idx]
                         st.markdown(
                             f"<h2 style='color:{classe['color']};'>"
                             f"Résultat: {classe['name']} ({confidence:.1f}%)</h2>",
                             unsafe_allow_html=True
                         )
+                        
+                        # Graphique des probabilités
                         probas = {CLASSES[i]['name']: float(prediction[0][i]) for i in CLASSES}
                         st.bar_chart(probas)
         except Exception as e:
             st.error(f"Erreur d'analyse: {str(e)}")
 
-# === 5. Page d’inscription ===
+# 5. Formulaire d'inscription amélioré
 def page_inscription():
-    afficher_entete()
-    st.subheader("Formulaire d'inscription du patient")
+    """Formulaire avec validation des entrées"""
+    st.title("📝 Enregistrement Patient")
+    
     with st.form("inscription"):
         cols = st.columns(2)
         prenom = cols[0].text_input("Prénom*", key="prenom_input")
         nom = cols[1].text_input("Nom*", key="nom_input")
         email = st.text_input("Email*", type="default")
         age = st.number_input("Âge", min_value=0, max_value=120)
-        genre = st.radio("Genre", ["Homme", "Femme"], horizontal=True)
+        genre = st.radio("Genre", ["Homme", "Femme", "Autre"], horizontal=True)
+        
         submitted = st.form_submit_button("Sauvegarder")
+        
         if submitted:
             if not all([prenom, nom, email]):
                 st.error("Les champs obligatoires (*) doivent être remplis")
             else:
+                # Sauvegarde en session
                 st.session_state.update({
                     'prenom': prenom,
                     'nom': nom,
@@ -130,21 +145,35 @@ def page_inscription():
                 st.success("Profil enregistré avec succès !")
                 st.balloons()
 
-# === 6. Navigation principale ===
+# 6. Affichage du logo et du titre de l'app
+def afficher_entete():
+    st.markdown(
+        "<h1 style='text-align: center; color: #2c3e50;'>👁️ EyeScan Pro</h1>",
+        unsafe_allow_html=True
+    )
+    st.image("11.jpeg", width=80)  # Vérifie bien le nom et l'extension ici
+
+# 7. Navigation améliorée
 def main():
     st.sidebar.header("Navigation")
-    pages = {
-        "📝 Inscription": page_inscription,
-        "🔍 Analyse": page_predire_image
-    }
-
-    if "prenom" not in st.session_state:
-        st.sidebar.warning("Complétez d'abord l'inscription")
-        page = "📝 Inscription"
-    else:
-        page = st.sidebar.radio("Pages", list(pages.keys()))
     
-    pages[page]()
+    # Vérification si le formulaire est complété
+    if "prenom" not in st.session_state or "nom" not in st.session_state:
+        st.sidebar.warning("🛑 Vous devez d'abord remplir le formulaire.")
+        page = "📝 Inscription"  # Force l'affichage du formulaire
+    else:
+        page = st.sidebar.radio("Pages", ["📝 Inscription", "🔍 Analyse"])
+
+    if page == "🔍 Analyse" and not all(k in st.session_state for k in ['prenom', 'nom']):
+        st.warning("⚠️ Accès refusé. Complétez l'inscription d'abord.")
+        return
+    
+    if page == "📝 Inscription":
+        page_inscription()
+    elif page == "🔍 Analyse":
+        page_predire_image()
 
 if __name__ == "__main__":
+    st.set_page_config(page_title="EyeScan Pro", page_icon="👁️", layout="wide")
+    afficher_entete()  # Afficher le logo et le titre
     main()
