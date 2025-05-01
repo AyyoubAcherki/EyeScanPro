@@ -110,7 +110,7 @@ def page_inscription():
         nom = cols[1].text_input("Nom*", key="nom_input")
         email = st.text_input("Email*", type="default")
         age = st.number_input("Âge", min_value=0, max_value=120)
-        genre = st.radio("Genre", ["Homme", "Femme", "Autre"], horizontal=True)
+        genre = st.radio("Genre", ["Homme", "Femme"], horizontal=True)
         submitted = st.form_submit_button("Sauvegarder")
         if submitted:
             if not all([prenom, nom, email]):
