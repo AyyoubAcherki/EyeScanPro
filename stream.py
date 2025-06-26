@@ -2,78 +2,47 @@ import streamlit as st
 from PIL import Image
 import numpy as np
 from tensorflow.keras.models import load_model
+import os
+import gdown  # pip install gdown
 
-# 1. Charger le modèle
+# === CONFIGURATION DU MODÈLE ===
+drive_file_id = "1Av6VaKPSGTbv0ed2-OsPwaGVr2aEEH6o"
+model_path = "milleur_model_vgg16_adam.h5"
+
+# === TÉLÉCHARGEMENT DU MODÈLE DEPUIS GOOGLE DRIVE (si besoin) ===
+if not os.path.exists(model_path):
+    st.sidebar.info("📥 Téléchargement du modèle depuis Google Drive...")
+    try:
+        url = f"https://drive.google.com/uc?id={drive_file_id}"
+        gdown.download(url, model_path, quiet=False)
+        st.sidebar.success("✅ Modèle téléchargé avec succès.")
+    except Exception as e:
+        st.sidebar.error(f"❌ Erreur de téléchargement du modèle : {e}")
+        st.stop()
+
+# === CHARGEMENT DU MODÈLE ===
 try:
-    modele = load_model("milleur_model_vgg16_adam.h5")
+    modele = load_model(model_path)
     st.sidebar.success("✅ Modèle chargé avec succès")
 except Exception as e:
     st.sidebar.error(f"❌ Erreur de chargement du modèle : {e}")
     st.stop()
 
-# 2. Classes prédictibles
+# === CLASSES POSSIBLES ===
 classes = ['Diabetic Retinopathy', 'Glaucoma', 'Healthy', 'Macular Scar', 'Myopia']
 
-# 3. Préparation de l'image
+# === PRÉPARATION DE L'IMAGE ===
 def preparer_image(img):
     try:
-        img = img.resize((224, 224)).convert("RGB")  # Redimensionner à 224x224
-        img_array = np.array(img) / 255.0  # Normalisation
-        img_array = np.expand_dims(img_array, axis=0)  # Forme (1, 224, 224, 3)
-        
-        # Affichage des dimensions avant et après le prétraitement
-        st.write(f"Image avant préparation : {img.size}")
-        st.write(f"Forme de l'image après préparation : {img_array.shape}")
-        
+        img = img.resize((224, 224)).convert("RGB")
+        img_array = np.array(img) / 255.0
+        img_array = np.expand_dims(img_array, axis=0)
         return img_array
     except Exception as e:
-        st.error(f"Erreur de prétraitement : {e}")
+        st.error(f"Erreur de préparation de l'image : {e}")
         return None
 
-# 4. Fonction pour la prédiction d'image
-def page_predire_image():
-    # Vérification si les informations d'inscription sont remplies
-    if "nom" not in st.session_state or "prenom" not in st.session_state:
-        st.warning("⚠️ Vous devez d'abord remplir le formulaire d'inscription.")
-        return
-
-    st.title("🖼️ Prédiction des maladies des yeux")
-
-    st.subheader("📷 Charger une image d'œil")
-
-    fichier_image = st.file_uploader("Choisir une image", type=["jpg", "jpeg", "png"])
-
-    if fichier_image is not None:
-        try:
-            image = Image.open(fichier_image).convert("RGB")
-            st.image(image, caption="Image chargée", use_column_width=True)
-
-            img_prep = preparer_image(image)
-            if img_prep is None:
-                return
-
-            # Prédiction
-            try:
-                prediction = modele.predict(img_prep)
-                st.write(f"🧪 Valeurs de la prédiction : {prediction}")
-                st.write(f"Forme de la prédiction : {prediction.shape}")
-                
-                # Vérifier que la sortie du modèle correspond aux classes
-                if prediction.shape[1] != len(classes):
-                    st.error(f"❌ La sortie du modèle ({prediction.shape[1]}) ne correspond pas au nombre de classes ({len(classes)}).")
-                else:
-                    classe_predite = int(np.argmax(prediction))
-                    proba = float(np.max(prediction)) * 100
-                    st.markdown(
-                        f"<h3 style='color:green;'>✅ Résultat : {classes[classe_predite]} ({proba:.2f}%)</h3>",
-                        unsafe_allow_html=True
-                    )
-            except Exception as e:
-                st.error(f"❌ Erreur lors de la prédiction : {e}")
-        except Exception as e:
-            st.error(f"❌ Erreur lors du chargement de l'image : {e}")
-
-# 5. Fonction pour l'inscription
+# === PAGE : FORMULAIRE D'INSCRIPTION ===
 def page_inscription():
     st.title("🧾 Formulaire d'inscription")
 
@@ -89,27 +58,63 @@ def page_inscription():
         if not all([nom, prenom, adresse, email]):
             st.warning("⚠️ Veuillez remplir tous les champs.")
             return
-        st.success(f"Bienvenue {prenom} {nom} 👋")
-        
-        # Sauvegarder les informations de l'utilisateur dans la session
+
+        # Stocker les infos dans la session
         st.session_state.nom = nom
         st.session_state.prenom = prenom
         st.session_state.adresse = adresse
         st.session_state.email = email
         st.session_state.genre = genre
 
-        st.info("✅ Formulaire d'inscription soumis avec succès. Vous pouvez maintenant accéder à la page de prédiction.")
+        st.success(f"Bienvenue {prenom} {nom} 👋")
+        st.info("✅ Formulaire validé. Accédez maintenant à la prédiction.")
 
-# 6. Menu de navigation pour les pages
+# === PAGE : PRÉDICTION D'IMAGE ===
+def page_predire_image():
+    if "nom" not in st.session_state or "prenom" not in st.session_state:
+        st.warning("⚠️ Merci de remplir d'abord le formulaire d'inscription.")
+        return
+
+    st.title("🔬 Prédiction des maladies oculaires")
+    st.subheader("📷 Importer une image d'œil")
+
+    fichier_image = st.file_uploader("Choisir une image", type=["jpg", "jpeg", "png"])
+
+    if fichier_image:
+        try:
+            image = Image.open(fichier_image).convert("RGB")
+            st.image(image, caption="Image chargée", use_column_width=True)
+
+            img_prep = preparer_image(image)
+            if img_prep is None:
+                return
+
+            prediction = modele.predict(img_prep)
+            classe_predite = np.argmax(prediction)
+            proba = np.max(prediction) * 100
+            maladie = classes[classe_predite]
+
+            st.markdown(
+                f"<h3 style='color:green;'>✅ Résultat : {maladie} ({proba:.2f}%)</h3>",
+                unsafe_allow_html=True
+            )
+
+            # Affichage optionnel brut
+            st.write("🧪 Détails bruts de la prédiction :", prediction)
+
+        except Exception as e:
+            st.error(f"❌ Erreur lors de la prédiction : {e}")
+
+# === MENU DE NAVIGATION ===
 PAGES = {
-    "Page d'Inscription": page_inscription,
-    "Prédiction d'Image": page_predire_image
+    "Page d'inscription": page_inscription,
+    "Prédiction d'image": page_predire_image
 }
 
 def main():
-    st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Sélectionner une page", list(PAGES.keys()))
-    PAGES[page]()
+    st.sidebar.title("🧭 Navigation")
+    choix = st.sidebar.radio("Choisir une page", list(PAGES.keys()))
+    PAGES[choix]()
 
 if __name__ == "__main__":
     main()
