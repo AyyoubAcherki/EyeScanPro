@@ -5,81 +5,27 @@ from tensorflow.keras.models import load_model
 import os
 import gdown  # pip install gdown
 
-# # === CONFIGURATION DU MODÈLE ===
-# drive_file_id = "1Av6VaKPSGTbv0ed2-OsPwaGVr2aEEH6o"
-# model_path = "milleur_model_vgg16_adam.h5"
-
-# # === TÉLÉCHARGEMENT DU MODÈLE DEPUIS GOOGLE DRIVE (si besoin) ===
-# if not os.path.exists(model_path):
-#     st.sidebar.info("📥 Téléchargement du modèle depuis Google Drive...")
-#     try:
-#         url = f"https://drive.google.com/uc?id={drive_file_id}"
-#         gdown.download(url, model_path, quiet=False)
-#         st.sidebar.success("✅ Modèle téléchargé avec succès.")
-#     except Exception as e:
-#         st.sidebar.error(f"❌ Erreur de téléchargement du modèle : {e}")
-#         st.stop()
-
-# # === CHARGEMENT DU MODÈLE ===
-# try:
-#     modele = load_model(model_path)
-#     st.sidebar.success("✅ Modèle chargé avec succès")
-# except Exception as e:
-#     st.sidebar.error(f"❌ Erreur de chargement du modèle : {e}")
-#     st.stop()
-
-# # === CLASSES POSSIBLES ===
-# classes = ['Diabetic Retinopathy', 'Glaucoma', 'Healthy', 'Macular Scar', 'Myopia']
-
-# # === PRÉPARATION DE L'IMAGE ===
-# def preparer_image(img):
-#     try:
-#         img = img.resize((224, 224)).convert("RGB")
-#         img_array = np.array(img) / 255.0
-#         img_array = np.expand_dims(img_array, axis=0)
-#         return img_array
-#     except Exception as e:
-#         st.error(f"Erreur de préparation de l'image : {e}")
-#         return None
-
-import streamlit as st
-from tensorflow.keras.models import load_model
-import os
-import gdown
-import numpy as np
-from PIL import Image
-
 # === CONFIGURATION DU MODÈLE ===
 drive_file_id = "1Av6VaKPSGTbv0ed2-OsPwaGVr2aEEH6o"
-model_path_h5 = "milleur_model_vgg16_adam.h5"
-model_path_keras = "milleur_model_vgg16_adam.keras"  # conversion recommandée
+model_path = "milleur_model_vgg16_adam.h5"
 
 # === TÉLÉCHARGEMENT DU MODÈLE DEPUIS GOOGLE DRIVE (si besoin) ===
-if not os.path.exists(model_path_h5) and not os.path.exists(model_path_keras):
+if not os.path.exists(model_path):
     st.sidebar.info("📥 Téléchargement du modèle depuis Google Drive...")
     try:
         url = f"https://drive.google.com/uc?id={drive_file_id}"
-        gdown.download(url, model_path_h5, quiet=False)
+        gdown.download(url, model_path, quiet=False)
         st.sidebar.success("✅ Modèle téléchargé avec succès.")
     except Exception as e:
         st.sidebar.error(f"❌ Erreur de téléchargement du modèle : {e}")
         st.stop()
 
-# === CHARGEMENT DU MODÈLE AVEC CACHE STREAMLIT ===
-@st.cache_resource
-def charger_modele():
-    if os.path.exists(model_path_keras):
-        return load_model(model_path_keras)
-    else:
-        # Si uniquement le .h5 existe, on charge avec compile=False pour éviter les erreurs
-        return load_model(model_path_h5, compile=False)
-
+# === CHARGEMENT DU MODÈLE ===
 try:
-    modele = charger_modele()
+    modele = load_model(model_path)
     st.sidebar.success("✅ Modèle chargé avec succès")
 except Exception as e:
-    st.sidebar.error("❌ Erreur de chargement du modèle : vérifier la compatibilité TensorFlow/Keras")
-    st.sidebar.error(str(e))
+    st.sidebar.error(f"❌ Erreur de chargement du modèle : {e}")
     st.stop()
 
 # === CLASSES POSSIBLES ===
