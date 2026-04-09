@@ -27,7 +27,7 @@ if not os.path.exists(model_path):
 # except Exception as e:
 #     st.sidebar.error(f"❌ Erreur de chargement du modèle : {e}")
 #     st.stop()
-modele = load_model(model_path)
+modele = load_model("milleur_model_vgg16_adam.h5", compile=False)
 # === CLASSES POSSIBLES ===
 classes = ['Diabetic Retinopathy', 'Glaucoma', 'Healthy', 'Macular Scar', 'Myopia']
 
