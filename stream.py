@@ -21,13 +21,13 @@ if not os.path.exists(model_path):
         st.stop()
 
 # === CHARGEMENT DU MODÈLE ===
-# try:
-#     modele = load_model(model_path)
-#     st.sidebar.success("✅ Modèle chargé avec succès")
-# except Exception as e:
-#     st.sidebar.error(f"❌ Erreur de chargement du modèle : {e}")
-#     st.stop()
-modele = load_model("milleur_model_vgg16_adam.h5", compile=False)
+try:
+    modele = load_model(model_path)
+    st.sidebar.success("✅ Modèle chargé avec succès")
+except Exception as e:
+    st.sidebar.error(f"❌ Erreur de chargement du modèle : {e}")
+    st.stop()
+
 # === CLASSES POSSIBLES ===
 classes = ['Diabetic Retinopathy', 'Glaucoma', 'Healthy', 'Macular Scar', 'Myopia']
 
