@@ -32,16 +32,29 @@ except Exception as e:
 classes = ['Diabetic Retinopathy', 'Glaucoma', 'Healthy', 'Macular Scar', 'Myopia']
 
 # === PRÉPARATION DE L'IMAGE ===
+# def preparer_image(img):
+#     try:
+#         img = img.resize((224, 224)).convert("RGB")
+#         img_array = np.array(img) / 255.0
+#         img_array = np.expand_dims(img_array, axis=0)
+#         return img_array
+#     except Exception as e:
+#         st.error(f"Erreur de préparation de l'image : {e}")
+#         return None
+
 def preparer_image(img):
     try:
-        img = img.resize((224, 224)).convert("RGB")
+        img = img.convert("RGB").resize((224, 224))
         img_array = np.array(img) / 255.0
+        if img_array.shape != (224, 224, 3):
+            st.error(f"L'image doit avoir 3 canaux RGB et une taille 224x224. Shape reçue : {img_array.shape}")
+            return None
         img_array = np.expand_dims(img_array, axis=0)
         return img_array
     except Exception as e:
         st.error(f"Erreur de préparation de l'image : {e}")
         return None
-
+        
 # === PAGE : FORMULAIRE D'INSCRIPTION ===
 def page_inscription():
     st.title("🧾 Formulaire d'inscription")
